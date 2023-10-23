@@ -1,4 +1,3 @@
---upgrade pip
 -e ./package # awesome-streamlit extensions
 
 # Streamlit
