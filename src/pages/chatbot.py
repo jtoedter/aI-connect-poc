@@ -48,12 +48,12 @@ def write():
     # Sidebar - let user choose model, show total cost of current conversation, and let user clear the current conversation
     st.sidebar.divider()
     st.sidebar.header("Chatbot Config")
-    model = st.sidebar.radio("Choose a model:", ("GPT-3.5", "GPT-4"))
-    clear_button = st.sidebar.button("Clear Conversation", key="clear")
+    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 16K", "GPT-4 8K"))
+    clear_button = st.sidebar.button("Clear Chat", key="clear")
 
     # Map model names to OpenAI model IDs
-    if model == "GPT-3.5":
-        model_name = "gpt-3.5-turbo"
+    if model == "GPT-3.5 16K":
+        model_name = "gpt-3.5-turbo-16k"
     else:
         model_name = "gpt-4"
 
