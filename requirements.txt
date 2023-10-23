@@ -5,3 +5,8 @@ langchain
 openai
 python-dotenv
 fastapi
+uvicorn
+tiktoken
+bs4
+pydantic
+streamlit_chat
