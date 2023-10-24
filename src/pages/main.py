@@ -3,7 +3,7 @@ import streamlit as st
 # Write to app py file
 def write():
     with st.spinner("Loading..."):
-        st.header("🤖 Welcome to Litmus AI Connect! (**ALPHA**)")
+        st.header("🤖 Welcome to Litmus AI Connect POC! (**ALPHA**)")
 
     st.write("""
     To use a bot or an agent, simply click on them on the navigation pane. Enjoy!

@@ -16,9 +16,9 @@ PAGES = {
 
 def main():
     """Main function of the App"""
-    st.set_page_config(page_title="Litmus AI Connect", page_icon="🐉")
+    st.set_page_config(page_title="Litmus AI Connect POC", page_icon="🐉")
 
-    st.sidebar.title("🐉 Litmus AI Connect (**ALPHA**)")
+    st.sidebar.title("🐉 Litmus AI Connect POC (**ALPHA**)")
     st.sidebar.header("Navigation")
     selection = st.sidebar.radio("Go to:", list(PAGES.keys()))
 

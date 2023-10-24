@@ -36,15 +36,26 @@ def write():
 
     # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
-    st.sidebar.header("Research Config")
-    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (16K)", "GPT-4 (8K)"))
-    clear_button = st.sidebar.button("Clear Output (WIP)", key="clear")
+    st.sidebar.header("Chatbot Config")
+    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 Instruct (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
+    temp = st.sidebar.radio("Select temperature:", ("Low temp", "Mid temp", "High temp"))
+    clear_button = st.sidebar.button("Clear Chat", key="clear")
 
     # Sidebar to map model names to OpenAI model IDs
-    if model == "GPT-3.5 (16K)":
+    if model == "GPT-3.5 Instruct (4K)":
+        model_name = "gpt-3.5-turbo-instruct"
+    if model == "GPT-4 (16K)":
         model_name = "gpt-3.5-turbo-16k"
     else:
         model_name = "gpt-4"
+
+    # Sidebar to map temperatue to OpenAI model IDs
+    if temp == "Low temp":
+        temperature = "0"
+    if temp == "Mid temp":
+        temperature = "0.5"
+    else:
+        temperature = "0.9"
    
     # Sidebar to export chat as PDF (not working)
     export_as_pdf = st.sidebar.button("Export Output (WIP)")
@@ -124,7 +135,7 @@ def write():
             print(f"HTTP request failed with status code {response.status_code}")
 
     def summary(objective, content):
-        llm = ChatOpenAI(temperature=0, model_name=model_name)
+        llm = ChatOpenAI(temperature=temperature, model_name=model_name)
 
         text_splitter = RecursiveCharacterTextSplitter(
             separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
@@ -196,7 +207,7 @@ def write():
         "system_message": system_message,
     }
 
-    llm = ChatOpenAI(temperature=0, model_name=model_name)
+    llm = ChatOpenAI(temperature=temperature, model_name=model_name)
     memory = ConversationSummaryBufferMemory(
         memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
 

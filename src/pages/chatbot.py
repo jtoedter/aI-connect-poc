@@ -24,14 +24,25 @@ def write():
     # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
     st.sidebar.header("Chatbot Config")
-    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (16K)", "GPT-4 (8K)"))
+    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
+    temp = st.sidebar.radio("Select temperature:", ("Low temp", "Mid temp", "High temp"))
     clear_button = st.sidebar.button("Clear Chat", key="clear")
 
     # Sidebar to map model names to OpenAI model IDs
-    if model == "GPT-3.5 (16K)":
+    if model == "GPT-3.5 (4K)":
+        model_name = "gpt-3.5-turbo"
+    if model == "GPT-4 (16K)":
         model_name = "gpt-3.5-turbo-16k"
     else:
         model_name = "gpt-4"
+
+    # Sidebar to map temperatue to OpenAI model IDs
+    if temp == "Low temp":
+        temperature = "0"
+    if temp == "Mid temp":
+        temperature = "0.5"
+    else:
+        temperature = "0.9"
 
     # Sidebar to export chat as PDF (not working)
     export_as_pdf = st.sidebar.button("Export Chat (WIP)")
@@ -110,7 +121,7 @@ def write():
     @st.cache_resource
     def setup_chain():
         memory = ConversationBufferMemory()
-        llm = ChatOpenAI(model_name=model_name, temperature=0, streaming=True)
+        llm = ChatOpenAI(model_name=model_name, temperature=temperature, streaming=True)
         chain = ConversationChain(llm=llm, memory=memory, verbose=True)
         return chain
 
