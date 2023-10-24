@@ -3,7 +3,6 @@ import streamlit as st
 import base64
 
 from dotenv import load_dotenv
-from streamlit_chat import message
 from tinydb import TinyDB
 from fpdf import FPDF
 
@@ -21,27 +20,6 @@ def write():
     with st.spinner("Loading..."):
       st.header("💬 Chatbot")
     st.write("⚠️ NOTE - Bugs to be expected & switching bots/agents will reset your conversation.")
-
-    # Define stream with custom handler for context aware chatbot
-    class StreamHandler(BaseCallbackHandler): 
-        def __init__(self, container, initial_text=""):
-            self.container = container
-            self.text = initial_text
-
-        def on_llm_new_token(self, token: str, **kwargs):
-            self.text += token
-            self.container.markdown(self.text)
-
-    # Define chat format in stream
-    def display_msg(msg, author):
-        """Method to display message on the UI
-
-        Args:
-            msg (str): message to display
-            author (str): author of the message -user/assistant
-        """
-        st.session_state["messages"].append({"role": author, "content": msg})
-        st.chat_message(author).write(msg)
 
     # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
@@ -91,7 +69,7 @@ def write():
           st.session_state["past"] = []
       if "messages" not in st.session_state:
           st.session_state["messages"] = [
-              {"role": "system", "content": "You are a helpful assistant."},
+              {"role": "system", "content": "You are a helpful assistant. You do not make things up. Keep your answers brief and concise."},
               {"role": "assistant", "content": "How can I help you today?"}
           ]
       for msg in st.session_state["messages"]:
@@ -103,9 +81,30 @@ def write():
         st.session_state["generated"] = []
         st.session_state["past"] = []
         st.session_state["messages"] = [
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": "You are a helpful assistant. You do not make things up. Keep your answers brief and concise."},
              {"role": "assistant", "content": "What can I help you with next?"}
         ]
+
+    # Define stream with custom handler for context aware chatbot
+    class StreamHandler(BaseCallbackHandler): 
+        def __init__(self, container, initial_text=""):
+            self.container = container
+            self.text = initial_text
+
+        def on_llm_new_token(self, token: str, **kwargs):
+            self.text += token
+            self.container.markdown(self.text)
+
+    # Define chat format in stream
+    def display_msg(msg, author):
+        """Method to display message on the UI
+
+        Args:
+            msg (str): message to display
+            author (str): author of the message -user/assistant
+        """
+        st.session_state["messages"].append({"role": author, "content": msg})
+        st.chat_message(author).write(msg)
 
     # Define and initate context aware chatbot
     @st.cache_resource

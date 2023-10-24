@@ -12,3 +12,5 @@ pydantic
 streamlit_chat
 tinydb
 fpdf
+duckduckgo-search
+numexpr
