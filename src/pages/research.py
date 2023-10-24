@@ -1,12 +1,14 @@
 import os
 import streamlit as st
-
-from dotenv import load_dotenv
 import requests
 import json
-
-from fpdf import FPDF
 import base64
+
+from dotenv import load_dotenv
+from fpdf import FPDF
+from pydantic import BaseModel, Field
+from typing import Type
+from bs4 import BeautifulSoup
 
 from langchain import PromptTemplate
 from langchain.agents import initialize_agent, Tool
@@ -17,9 +19,6 @@ from langchain.memory import ConversationSummaryBufferMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
 from langchain.tools import BaseTool
-from pydantic import BaseModel, Field
-from typing import Type
-from bs4 import BeautifulSoup
 from langchain.schema import SystemMessage
 
 load_dotenv()

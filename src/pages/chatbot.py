@@ -1,13 +1,11 @@
 import os
 import streamlit as st
-import json
+import base64
 
 from dotenv import load_dotenv
 from streamlit_chat import message
 from tinydb import TinyDB
-
 from fpdf import FPDF
-import base64
 
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationChain
