@@ -10,7 +10,7 @@ import src.pages.translation
 PAGES = {
     "🤖 Main": src.pages.main,
     "💬 Chatbot": src.pages.chatbot,
-    "🌐 Research Agent <WIP>": src.pages.research,
+    "🌐 Research Agent": src.pages.research,
     "🔤 Translation Agent <WIP>": src.pages.translation,
 }
 

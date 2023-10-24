@@ -10,3 +10,4 @@ tiktoken
 bs4
 pydantic
 streamlit_chat
+tinydb
