@@ -38,7 +38,7 @@ def write():
     st.sidebar.divider()
     st.sidebar.header("Research Config")
     model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (16K)", "GPT-4 (8K)"))
-    clear_button = st.sidebar.button("Clear Research (WIP)", key="clear")
+    clear_button = st.sidebar.button("Clear Output (WIP)", key="clear")
 
     # Sidebar to map model names to OpenAI model IDs
     if model == "GPT-3.5 (16K)":
@@ -47,7 +47,7 @@ def write():
         model_name = "gpt-4"
    
     # Sidebar to export chat as PDF (not working)
-    export_as_pdf = st.sidebar.button("Export Research (WIP)")
+    export_as_pdf = st.sidebar.button("Export Output (WIP)")
 
     def create_download_link(val, filename):
         b64 = base64.b64encode(val)  # val looks like b'...'
