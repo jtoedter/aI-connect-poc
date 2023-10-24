@@ -21,32 +21,33 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.tools import BaseTool
 from langchain.schema import SystemMessage
 
+# Load relevant APIs
 load_dotenv()
 browserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERPER_API_KEY")
 open_api_key = os.getenv("OPEN_API_KEY")
 
+# Write to app py file
 def write():
-    """Used to write the page in the app.py file"""
     with st.spinner("Loading..."):
       st.header("🌐 Research Agent")
 
     st.write("⚠️ NOTE - Bugs to be expected & switching bots/agents will reset your conversation.")
 
-    # Sidebar - let user choose model, show total cost of current conversation, and let user clear the current conversation
+    # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
     st.sidebar.header("Research Config")
     model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (16K)", "GPT-4 (8K)"))
-    clear_button = st.sidebar.button("Clear Research", key="clear")
+    clear_button = st.sidebar.button("Clear Research (WIP)", key="clear")
 
-    # Map model names to OpenAI model IDs
+    # Sidebar to map model names to OpenAI model IDs
     if model == "GPT-3.5 (16K)":
         model_name = "gpt-3.5-turbo-16k"
     else:
         model_name = "gpt-4"
-
-    # Export as PDF
-    export_as_pdf = st.sidebar.button("Export Research")
+   
+    # Sidebar to export chat as PDF (not working)
+    export_as_pdf = st.sidebar.button("Export Research (WIP)")
 
     def create_download_link(val, filename):
         b64 = base64.b64encode(val)  # val looks like b'...'
@@ -62,7 +63,7 @@ def write():
 
         st.sidebar.markdown(html, unsafe_allow_html=True)
 
-    # 1. Tool for search
+    # 1. Define tool for web search
     def search(query):
         url = "https://google.serper.dev/search"
 
@@ -81,7 +82,7 @@ def write():
 
         return response.text
 
-    # 2. Tool for scraping
+    # 2. Define tool for web scraping
     def scrape_website(objective: str, url: str):
         # Scrape website, and also will summarize the content based on objective if the content is too large
         # Objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
@@ -178,16 +179,16 @@ def write():
     ]
 
     system_message = SystemMessage(
-        content="""You are an expert researcher who is detailed and consistent. You conduct research on any topic and you produce facts-based results.
+        content="""You are an expert researcher. You conduct detailed research on any topic and you produce facts-based results.
                 Your clients are corporate professionals who rely on you for recent and relevant facts, information and data that backs up your research.
-                You do not make things up.
+                You are consistent and you do not make things up.
                 
                 Always complete the objective above with the following rules:
                 1/ You will do enough research to gather as much recent and relevant information as possible about the topic.
                 2/ If there are website URLs of relevant links and articles, you will scrape them to gather more information. You will do this 1 time only, no more.
                 3/ You will not make things up. You should only write based on the facts and data that you have gathered.
-                4/ Your final output will be 400 words. You can use bullet points to highlight key information.
-                5/ You will include all reference sources and links that you have used for your research at the end of your final output to support your research."""
+                4/ Your final output will be 350 words. You can use bullet points to highlight key information.
+                5/ You will include reference sources and links that you have used for your research at the end of your final output."""
     )
 
     agent_kwargs = {
@@ -208,15 +209,23 @@ def write():
         memory=memory,
     )
 
+    # Initialise session state variables
+    if os.environ.get("OPENAI_API_KEY"):
+      if "messages" not in st.session_state:
+          st.session_state["messages"] = []
+
+   # Reset session state
+    if clear_button:
+        st.session_state["messages"] = []
+
     #4. Use Streamlit to create a web app
     query = st.text_input("What would you like to research? Then press Enter!")
-
     if query:
         st.write("Doing research on ", query)
-
         result = agent({"input": query})
-
         st.info(result["output"])
+        st.session_state["messages"].append({"input": query})
+        st.session_state["messages"].append({"output": result})
 
 if __name__ == "__main__":
     write()

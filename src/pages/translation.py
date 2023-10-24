@@ -1,7 +1,7 @@
 import streamlit as st
 
+# Write to app py file
 def write():
-    """Used to write the page in the app.py file"""
     with st.spinner("Loading..."):
       st.header("🔤 Translation Agent")
 

@@ -12,18 +12,17 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langchain.callbacks.base import BaseCallbackHandler
 
+# Load relevant APIs
 load_dotenv()
 open_api_key = os.getenv("OPEN_API_KEY")
 
-# Write to main app py file
+# Write to app py file
 def write():
-    """Used to write the page in the app.py file"""
     with st.spinner("Loading..."):
       st.header("💬 Chatbot")
-
     st.write("⚠️ NOTE - Bugs to be expected & switching bots/agents will reset your conversation.")
 
-    # Consolidated from streaming py file
+    # Define stream with custom handler for context aware chatbot
     class StreamHandler(BaseCallbackHandler): 
         def __init__(self, container, initial_text=""):
             self.container = container
@@ -33,12 +32,7 @@ def write():
             self.text += token
             self.container.markdown(self.text)
 
-    # Context aware chatbot code ##
-   
-    # Initialize chat history
-    db = TinyDB("chat_history.json")
-
-    # Define chat format
+    # Define chat format in stream
     def display_msg(msg, author):
         """Method to display message on the UI
 
@@ -49,20 +43,20 @@ def write():
         st.session_state["messages"].append({"role": author, "content": msg})
         st.chat_message(author).write(msg)
 
-    # Sidebar - let user choose model, show total cost of current conversation, and let user clear the current conversation
+    # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
     st.sidebar.header("Chatbot Config")
     model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (16K)", "GPT-4 (8K)"))
     clear_button = st.sidebar.button("Clear Chat", key="clear")
 
-    # Map model names to OpenAI model IDs
+    # Sidebar to map model names to OpenAI model IDs
     if model == "GPT-3.5 (16K)":
         model_name = "gpt-3.5-turbo-16k"
     else:
         model_name = "gpt-4"
 
-    # Export as PDF
-    export_as_pdf = st.sidebar.button("Export Chat")
+    # Sidebar to export chat as PDF (not working)
+    export_as_pdf = st.sidebar.button("Export Chat (WIP)")
 
     def create_download_link(val, filename):
         b64 = base64.b64encode(val)  # val looks like b'...'
@@ -78,7 +72,8 @@ def write():
 
         st.sidebar.markdown(html, unsafe_allow_html=True)
 
-    # Initialise chat history session state variables
+    # Initialize chat history database and initialize chat history session
+    db = TinyDB("chat_history.json")
     chat_history = db.all()
 
     # Display chat messages from history on app rerun
@@ -89,7 +84,7 @@ def write():
     # Initialise session state variables
     if os.environ.get("OPENAI_API_KEY"):
       if "model_name" not in st.session_state:
-          st.session_state[model_name] = []
+          st.session_state["model_name"] = []
       if "generated" not in st.session_state:
           st.session_state["generated"] = []
       if "past" not in st.session_state:
@@ -102,9 +97,9 @@ def write():
       for msg in st.session_state["messages"]:
                 st.chat_message(msg["role"]).write(msg["content"])
 
-    # reset everything
+    # Reset session state
     if clear_button:
-        st.session_state[model_name] = []
+        st.session_state["model_name"] = []
         st.session_state["generated"] = []
         st.session_state["past"] = []
         st.session_state["messages"] = [
@@ -112,6 +107,7 @@ def write():
              {"role": "assistant", "content": "What can I help you with next?"}
         ]
 
+    # Define and initate context aware chatbot
     @st.cache_resource
     def setup_chain():
         memory = ConversationBufferMemory()
@@ -120,13 +116,14 @@ def write():
         return chain
 
     chain = setup_chain()
+
     user_query = st.chat_input("Ask me anything & press Enter!")
     if user_query:
         display_msg(user_query, "user")
         with st.chat_message("assistant"):
             st_cb = StreamHandler(st.empty())
             response = chain.run(user_query, callbacks=[st_cb])
-            st.session_state['messages'].append({"role": "assistant", "content": response})
+            st.session_state["messages"].append({"role": "assistant", "content": response})
 
 if __name__ == "__main__":
     write()
