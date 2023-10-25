@@ -72,19 +72,32 @@ def write():
 
     # Initialise session state variables
     if os.environ.get("OPENAI_API_KEY"):
-      if "model_name" not in st.session_state:
-          st.session_state["model_name"] = []
-      if "generated" not in st.session_state:
-          st.session_state["generated"] = []
-      if "past" not in st.session_state:
-          st.session_state["past"] = []
-      if "messages" not in st.session_state:
-          st.session_state["messages"] = [
-              {"role": "system", "content": "You are a helpful assistant. You do not make things up. Keep your answers brief and concise."},
-              {"role": "assistant", "content": "How can I help you today?"}
-          ]
-      for msg in st.session_state["messages"]:
-                st.chat_message(msg["role"]).write(msg["content"])
+
+        # To clear chat history after swtching chatbot
+        current_page = __name__
+        if "current_page" not in st.session_state:
+            st.session_state["current_page"] = current_page
+        if st.session_state["current_page"] != current_page:
+            try:
+                st.cache_resource.clear()
+                del st.session_state["current_page"]
+                del st.session_state["messages"]
+            except:
+                pass
+
+        # Session initiation if blank
+        if "model_name" not in st.session_state:
+            st.session_state["model_name"] = []
+        if "generated" not in st.session_state:
+            st.session_state["generated"] = []
+        if "past" not in st.session_state:
+            st.session_state["past"] = []
+        if "messages" not in st.session_state:
+            st.session_state["messages"] = [
+                {"role": "assistant", "content": "How can I help you today?"}
+            ]
+        for msg in st.session_state["messages"]:
+                    st.chat_message(msg["role"]).write(msg["content"])
 
     # Reset session state
     if clear_button:
@@ -92,7 +105,6 @@ def write():
         st.session_state["generated"] = []
         st.session_state["past"] = []
         st.session_state["messages"] = [
-            {"role": "system", "content": "You are a helpful assistant. You do not make things up. Keep your answers brief and concise."},
              {"role": "assistant", "content": "What can I help you with next?"}
         ]
 

@@ -222,7 +222,20 @@ def write():
 
     # Initialise session state variables
     if os.environ.get("OPENAI_API_KEY"):
-      if "messages" not in st.session_state:
+
+         # To clear chat history after swtching chatbot
+        current_page = __name__
+        if "current_page" not in st.session_state:
+            st.session_state["current_page"] = current_page
+        if st.session_state["current_page"] != current_page:
+            try:
+                st.cache_resource.clear()
+                del st.session_state["current_page"]
+                del st.session_state["messages"]
+            except:
+                pass  
+    
+        if "messages" not in st.session_state:
           st.session_state["messages"] = []
 
    # Reset session state
