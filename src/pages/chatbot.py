@@ -24,8 +24,8 @@ def write():
     # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
     st.sidebar.header("Chatbot Config")
-    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
-    temp = st.sidebar.radio("Select temperature:", ("Low temp", "Mid temp", "High temp"))
+    model = st.sidebar.selectbox("Choose a model:", ("GPT-3.5 (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
+    temp = st.sidebar.selectbox("Select temperature:", ("Low temp", "Mid temp", "High temp"))
     clear_button = st.sidebar.button("Clear Chat", key="clear")
 
     # Sidebar to map model names to OpenAI model IDs
@@ -40,9 +40,9 @@ def write():
     if temp == "Low temp":
         temperature = "0"
     if temp == "Mid temp":
-        temperature = "0.5"
+        temperature = "0.3"
     else:
-        temperature = "0.9"
+        temperature = "0.7"
 
     # Sidebar to export chat as PDF (not working)
     export_as_pdf = st.sidebar.button("Export Chat (WIP)")

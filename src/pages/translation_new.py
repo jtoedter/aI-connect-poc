@@ -14,6 +14,7 @@ from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import SystemMessage
 from langchain.callbacks.base import BaseCallbackHandler
+from langchain import PromptTemplate
 
 # Load relevant APIs
 load_dotenv()
@@ -29,9 +30,25 @@ def write():
     # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
     st.sidebar.header("Translation Config")
+    i_language = st.sidebar.selectbox("Your input language:", ("English", "Japanese"))
+    o_language = st.sidebar.selectbox("Your output language:", ("Japanese", "English", "Surprise me!"))
     model = st.sidebar.selectbox("Choose a model:", ("GPT-3.5 (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
     temp = st.sidebar.selectbox("Select temperature:", ("Low temp", "Mid temp", "High temp"))
     clear_button = st.sidebar.button("Clear Translation", key="clear")
+
+    # Sidebar to map input language to system prompts
+    if i_language == "English":
+        input_language = "English"
+    else:
+        input_language = "Japanese"
+
+    # Sidebar to map output language to system prompts
+    if o_language == "English":
+        output_language = "English"
+    if o_language == "Japanese":
+        output_language = "Japanese"
+    else:
+        output_language = "Surprise me!"
 
     # Sidebar to map model names to OpenAI model IDs
     if model == "GPT-3.5 (4K)":
@@ -155,22 +172,22 @@ def write():
                 func=llm_math_chain.run,
                 description="Useful for when you need to answer questions involving mathematical calculations"
             )]
-        
+
+        map_prompt = {
+        "input_language": input_language,
+        "output_language": output_language,
+        }
+
+        map_prompt_template = PromptTemplate(
+            template=map_prompt, input_variables=["input_language", "output_language"])
+
         # Define system prompts
         system_message = SystemMessage(
-           content="""You are expert bi-lingual translator natively fluent in Japanese and English. You only translate between English and Japanese. You never make things up. You never break character. 
-           If the user chats to you in English, you will respond in native natural-sounding English. If the user chats to you in Japanese, you will respond in native natural-sounding Japanese. 
-           If you are asked to translate between Japanese and English, you will do your best to ensure the translation is accurate, natural-sounding, and contextually-aware. You may ask the user for more information to get more context before translating.          
-           
-            Complete the objectives above with the following steps:
-            1/ When asked to translate between English and Japanese, you will generate increasingly accurate and natural-sounding translations from the input language to the output language
-            2/ If the user has not provided any context for the translation, you may ask for more information, such as who the audience will be (example: a guest or client would mean more formal tone; a family or friend would mean more casual tone), or what the format will be (example: email, chat message, phone call, in-person conversation)
-            3/ In your first translation, you will ensure you have accurately translated in-verbatim from one language to the other. You will not miss translating any words and you will not make things up.
-            4/ For your second translation, you will consider any information and context that you have gathered from the user (example: audience, tone, format) and improve the first translation to make it more relevant and targeted.
-            5/ You will then ask yourself: "How can I make the second translation sound more native and natural-sounding in the output language?" You will then do a third translation to the output language ensuring that it is native and natural-sounding.
-            6/ You will then compare your third translation to the input language to double-check that you have not made any mistakes or made anything up.
+           content="""You are expert bi-lingual translator in {input_language} and {output_language}. You are a native speaker and professionally fluent in both of these languages.
+            Your output is only in the {output_language} which is a translation from the user input which you received in {input_language}.
+            Your output should always be accurately translated and naturally-sounding in {output_language}.
+            You never make things up. You never break character. 
             """
-
         )
     
         agent_kwargs = {
@@ -180,11 +197,13 @@ def write():
         agent = initialize_agent(
             tools=tools,
             llm=llm,
+            chain=chain,
             agent=AgentType.OPENAI_FUNCTIONS,
             handle_parsing_errors=True,
             verbose=True,
+            map_prompt=map_prompt_template,
+            combine_prompt=map_prompt_template,
             agent_kwargs=agent_kwargs,
-            chain=chain 
             )
         return agent
 

@@ -36,10 +36,10 @@ def write():
 
     # Sidebar to select chatbot model and to clear chat
     st.sidebar.divider()
-    st.sidebar.header("Chatbot Config")
-    model = st.sidebar.radio("Choose a model:", ("GPT-3.5 Instruct (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
-    temp = st.sidebar.radio("Select temperature:", ("Low temp", "Mid temp", "High temp"))
-    clear_button = st.sidebar.button("Clear Chat", key="clear")
+    st.sidebar.header("Research Config")
+    model = st.sidebar.selectbox("Choose a model:", ("GPT-3.5 Instruct (4K)", "GPT-3.5 (16K)", "GPT-4 (8K)"))
+    temp = st.sidebar.selectbox("Select temperature:", ("Low temp", "Mid temp", "High temp"))
+    clear_button = st.sidebar.button("Clear Research", key="clear")
 
     # Sidebar to map model names to OpenAI model IDs
     if model == "GPT-3.5 Instruct (4K)":
@@ -53,9 +53,9 @@ def write():
     if temp == "Low temp":
         temperature = "0"
     if temp == "Mid temp":
-        temperature = "0.5"
+        temperature = "0.3"
     else:
-        temperature = "0.9"
+        temperature = "0.7"
    
     # Sidebar to export chat as PDF (not working)
     export_as_pdf = st.sidebar.button("Export Output (WIP)")
@@ -199,7 +199,7 @@ def write():
                 2/ If there are website URLs of relevant links and articles, you will scrape them to gather more information. You will do this 1 time only, no more.
                 3/ You will not make things up. You should only write based on the facts and data that you have gathered. You will not break character.
                 4/ Your final output will be 350 words. You can use bullet points to highlight key information.
-                5/ You will include reference sources and links that you have used for your research at the end of your final output."""
+                5/ You will always include reference sources and links at the end of your output, citing only the minimal set of sources needed to support your research to the query."""
     )
 
     agent_kwargs = {
