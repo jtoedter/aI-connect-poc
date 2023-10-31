@@ -6,14 +6,14 @@ import src.pages.main
 import src.pages.chatbot
 import src.pages.research
 import src.pages.translation
-import src.pages.translation_new
+##import src.pages.translation_new
 
 PAGES = {
     "🤖 Main": src.pages.main,
     "💬 Chatbot": src.pages.chatbot,
     "🌐 Research Agent": src.pages.research,
     "🔤 Translation Agent <WIP>": src.pages.translation,
-    "🔤 Translation Test <TEST>": src.pages.translation_new,
+  ##  "🔤 Translation Test <TEST>": src.pages.translation_new,
 }
 
 def main():
