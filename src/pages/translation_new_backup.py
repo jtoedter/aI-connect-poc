@@ -16,32 +16,6 @@ from langchain.schema import SystemMessage
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain import PromptTemplate
 
-# Initialize debounce variables
-last_call_time = 0
-debounce_interval = 2  # Set the debounce interval (in seconds) to your desired value
-
-def debounce_replicate_run(llm, prompt, max_len, temperature, top_p, API_TOKEN):
-    global last_call_time
-    print("last call time: ", last_call_time)
-
-    # Get the current time
-    current_time = time.time()
-
-    # Calculate the time elapsed since the last call
-    elapsed_time = current_time - last_call_time
-
-    # Check if the elapsed time is less than the debounce interval
-    if elapsed_time < debounce_interval:
-        print("Debouncing")
-        return "Hello! You are sending requests too fast. Please wait a few seconds before sending another request."
-
-
-    # Update the last call time to the current time
-    last_call_time = time.time()
-    
-    output = replicate.run(llm, input={"prompt": prompt + "Assistant: ", "max_length": max_len, "temperature": temperature, "top_p": top_p, "repetition_penalty": 1}, api_token=API_TOKEN)
-    return output
-
 # Load relevant APIs
 load_dotenv()
 open_api_key = os.getenv("OPEN_API_KEY")
@@ -69,13 +43,74 @@ DEFAULT_PRE_PROMPT = PRE_PROMPT
 st.sidebar.divider()
 st.sidebar.header("Translation Config")
 
+model_name = st.sidebar.selectbox("Choose a model:", list(MODELS.keys()), key="model_name")
+if model_name != DEFAULT_MODEL:
+    st.session_state["model_name"] = MODELS.get(model_name)
+else:
+    st.session_state["model_name"] = DEFAULT_MODEL
+
+temperature = st.session_state["temperature"] = st.sidebar.slider("Temperature:", min_value=0.0, max_value=1.0, value=DEFAULT_TEMP, step=0.1)
+if temperature != DEFAULT_TEMP:
+    st.session_state["temperature"] = temperature
+else:
+    st.session_state["temperature"] = DEFAULT_TEMP
+
+new_prompt = st.sidebar.text_area("Additional prompt before the chat starts. Add here if required:", DEFAULT_PRE_PROMPT, height=50)
+if new_prompt != DEFAULT_PRE_PROMPT and new_prompt != "" and new_prompt is not None:
+    st.session_state["pre_prompt"] = DEFAULT_PRE_PROMPT + new_prompt + "\n\n"
+else:
+    st.session_state["pre_prompt"] = DEFAULT_PRE_PROMPT
+
+clear_button = st.sidebar.button("Clear Translation", key="clear")
+if clear_button:
+    st.session_state["model_name"] = []
+    st.session_state["generated"] = []
+    st.session_state["past"] = []
+    st.session_state["messages"] = [
+        {"role": "assistant", "content": "What can I help you with next?"}
+]
+
+# Sidebar to map input language to system prompts
+#if i_language == "English":
+#    input_language = "English"
+#else:
+#    input_language = "Japanese"
+#    return input_language
+
+# Sidebar to map output language to system prompts
+#if o_language == "English":
+#    output_language = "English"
+#if o_language == "Japanese":
+#    output_language = "Japanese"
+#else:
+#    output_language = "Surprise me!"
+#    return output_language
+
+# Sidebar to export chat as PDF (not working)
+#export_as_pdf = st.sidebar.button("Export Chat (WIP)")
+
+#def create_download_link(val, filename):
+#    b64 = base64.b64encode(val)  # val looks like b'...'
+#    return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download PDF</a>'
+
+#if export_as_pdf:
+#    pdf = FPDF()
+#    pdf.add_page()
+#    pdf.set_font('Arial', 'B', 16)
+#    pdf.cell(40, 10, "Not working yet! Sorry!")
+#    
+#    html = create_download_link(pdf.output(dest="S").encode("latin-1"), "PDF")
+#
+#    st.sidebar.markdown(html, unsafe_allow_html=True)
+
+# Initialize chat history database and initialize chat history session
+
 # Initialize sessions
 def setup_session_state():
     if os.environ.get("OPENAI_API_KEY"):
 
         #Set default session
         st.session_state.setdefault("chat_history", [])
-        model_name = st.sidebar.selectbox("Choose a model:", list(MODELS.keys()), key="model_name")
         st.session_state.setdefault("model_name", DEFAULT_MODEL)
         st.session_state.setdefault("temperature", DEFAULT_TEMP)
         st.session_state.setdefault("pre_prompt", DEFAULT_PRE_PROMPT)
@@ -97,50 +132,21 @@ def setup_session_state():
             except:
                 pass
 
-def render_sidebar():
-    temperature = st.session_state["temperature"] = st.sidebar.slider("Temperature:", min_value=0.0, max_value=1.0, value=DEFAULT_TEMP, step=0.1, key="temperature")
-    new_prompt = st.sidebar.text_area("Additional prompt before the chat starts. Add here if required:", DEFAULT_PRE_PROMPT, height=50)
-    if new_prompt != DEFAULT_PRE_PROMPT and new_prompt != "" and new_prompt is not None:
-        st.session_state["pre_prompt"] = DEFAULT_PRE_PROMPT + new_prompt + "\n\n"
-    else:
-        st.session_state["pre_prompt"] = DEFAULT_PRE_PROMPT
-
-    clear_button = st.sidebar.button("Clear Translation", key="clear")
-    if clear_button:
-        st.session_state["model_name"] = []
-        st.session_state["generated"] = []
-        st.session_state["past"] = []
-        st.session_state["messages"] = [
-            {"role": "assistant", "content": "What can I help you with next?"}
-    ]
-
-# Initialize chat history database and initialize chat history session
 def render_chat_history():
+    db = TinyDB("chat_history.json")
+    chat_history = db.all()
+
     response_container = st.container()
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-def display_msg(msg, author):
-    message_placeholder = st.empty()
-    full_response = ""
-    string_dialogue = st.session_state["pre_prompt"]
-
-    for dict_message in st.session_state.chat_history:
-        speaker = "user" if dict_message["role"] == "user" else "assistant"
-        string_dialogue += f"{speaker}: {dict_message['content']}\n\n"
-    
-    """Method to display message on the UI
-
-    Args:
-        msg (str): message to display
-        author (str): author of the message -user/assistant
-    """
-    st.session_state["messages"].append({"role": author, "content": msg})
-    st.chat_message(author).write(msg)
-     
-    message_placeholder.markdown(full_response)
-    st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+def handle_user_input():
+    user_input = st.chat_input("Type your question here to talk to LLaMA2")
+    if user_input:
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
 
 # Define stream with custom handler for context aware chatbot
 class StreamHandler(BaseCallbackHandler): 
@@ -151,6 +157,17 @@ class StreamHandler(BaseCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs):
         self.text += token
         self.container.markdown(self.text)
+
+# Define chat format in stream
+def display_msg(msg, author):
+    """Method to display message on the UI
+
+    Args:
+        msg (str): message to display
+        author (str): author of the message -user/assistant
+    """
+    st.session_state["messages"].append({"role": author, "content": msg})
+    st.chat_message(author).write(msg)
 
 # Setup LLM and Agent 
 def setup_agent():
@@ -210,23 +227,20 @@ def setup_agent():
 
 agent = setup_agent()
 
-def handle_user_input():
-    user_input = st.chat_input(placeholder="Ask me anything & press Enter!")
-    if user_input:
-        display_msg(user_input, "user")
-        with st.chat_message("assistant"):
-            st_cb = StreamHandler(st.empty())
-            response = agent.run(user_input, callbacks=[st_cb])
-            st.session_state.messages.append({"role": "assistant", "content": response})
+user_query = st.chat_input(placeholder="Ask me anything & press Enter!")
+if user_query:
+    display_msg(user_query, "user")
+    with st.chat_message("assistant"):
+        st_cb = StreamHandler(st.empty())
+        response = agent.run(user_query, callbacks=[st_cb])
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
 def render_app():
     setup_session_state()
-    render_sidebar()
     render_chat_history()
-    display_msg()
-    setup_agent()
-    handle_user_input()
-    
+    display_msg() 
+    setup_agent() 
+
 def write():
     render_app()
 

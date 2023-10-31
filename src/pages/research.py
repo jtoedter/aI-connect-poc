@@ -76,6 +76,9 @@ def write():
 
     # 1. Define tool for web search
     def search(query):
+        with st.spinner():
+            st.write("Searching the web...")
+        
         url = "https://google.serper.dev/search"
 
         payload = json.dumps({
@@ -95,10 +98,11 @@ def write():
 
     # 2. Define tool for web scraping
     def scrape_website(objective: str, url: str):
+        with st.spinner():
+            st.write("Scrabing website...")
         # Scrape website, and also will summarize the content based on objective if the content is too large
         # Objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
 
-        print("Scraping website...")
         # Define the headers for the request
         headers = {
             'Cache-Control': 'no-cache',
@@ -135,17 +139,20 @@ def write():
             print(f"HTTP request failed with status code {response.status_code}")
 
     def summary(objective, content):
+        with st.spinner():
+            st.write("Summarizing search results...")
+    
         llm = ChatOpenAI(temperature=temperature, model_name=model_name)
 
         text_splitter = RecursiveCharacterTextSplitter(
             separators=["\n\n", "\n"], chunk_size=10000, chunk_overlap=500)
         docs = text_splitter.create_documents([content])
         map_prompt = """
-        Write a summary of the following text for topic: {objective}. 
-        The text is scraped data from a website so it will have irrelevant information, links and other news, that do not relate to the topic. 
-        Only summarize relevant information and try to keep as much factual information intact:
-        "{text}"
-        SUMMARY:
+        Write a summary of the 'text' below for 'topic': '{objective}' \n
+        The text is scraped data from a website so it will have irrelevant information, links and other news, that do not relate to the 'topic'. \n
+        Only summarize relevant information and try to keep as much factual information intact: \n
+        '{text}' \n\n
+        SUMMARY: \n
         """
         map_prompt_template = PromptTemplate(
             template=map_prompt, input_variables=["text", "objective"])
@@ -165,12 +172,12 @@ def write():
     class ScrapeWebsiteInput(BaseModel):
         """Inputs for scrape_website"""
         objective: str = Field(
-            description="Objective and task that users give to the agent")
+            description="Objective and topic that users give to the agent")
         url: str = Field(description="URL of the website to be scraped")
 
     class ScrapeWebsiteTool(BaseTool):
         name = "scrape_website"
-        description = "Useful when you need to get data from a website URL, passing both URL and topic to the function. DO NOT make up any URL, the URL should only be from the search results."
+        description = "Useful when you need to get data from a website URL, passing both URL and 'topic' to the function. DO NOT make up any URL, the URL should only be from the 'Search' tool results. You will only scrape a website once per user query."
         args_schema: Type[BaseModel] = ScrapeWebsiteInput
 
         def _run(self, objective: str, url: str):
@@ -184,22 +191,24 @@ def write():
         Tool(
             name="Search",
             func=search,
-            description="Useful for when you need to answer questions about the topic, current events and data. You should ask targeted questions."
+            description="Useful for when you need to answer questions about the 'topic', current events and data by searching the internet. You should ask targeted questions. You will only search once per user query."
         ),
         ScrapeWebsiteTool(),
     ]
 
     system_message = SystemMessage(
-        content="""You are an expert researcher. You only conduct detailed research on any topic and you only produce facts-based results.
-                Your clients are corporate professionals who rely on you for recent and relevant facts, information and data that backs up your research.
-                You are consistent and you do not make things up. You do not break character.
+        content="""You are an expert researcher. You only conduct detailed research on any 'topic' and you only produce facts-based results.
+                Your clients are corporate professionals who need recent and relevant facts, information and data.
+                You are consistent and you NEVER make things up. You NEVER break character.
                 
                 Always complete the objective above with the following rules:
-                1/ You will do enough research to gather as much recent and relevant information as possible about the topic.
-                2/ If there are website URLs of relevant links and articles, you will scrape them to gather more information. You will do this 1 time only, no more.
-                3/ You will not make things up. You should only write based on the facts and data that you have gathered. You will not break character.
-                4/ Your final output will be 350 words. You can use bullet points to highlight key information.
-                5/ You will always include reference sources and links at the end of your output, citing only the minimal set of sources needed to support your research to the query."""
+                1/ You will only use the 'Search' tool one time when researching and gathering as much recent and relevant information as possible about the 'topic'. 
+                2/ You will only 'Scrape Website' tool one time on the most relevant website URL to the 'topic' from the search results.
+                3/ Your final research output should be 350 words. You can use bullet points to highlight key information
+                4/ You will ALWAYS include reference sources with links at the end of your final output. You will only cite sources and links that you used to write your final output.
+                5/ You will not make things up. You should only write based on the facts and data that you have gathered that answers the 'topic'. You will not break character. 
+                You will not make things up. You should only write based on the facts and data that you have gathered. You will not break character.
+                """
     )
 
     agent_kwargs = {
